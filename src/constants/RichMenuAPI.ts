@@ -11,17 +11,6 @@ const errorMessages = {
   "MISSING_ALIAS": "リッチメニューエイリアスを指定してください"
 } as const;
 
-const toBlob = (base64: string, type: string) => {
-  const bin: string = atob(base64.split(",")[1]);
-  //const bin: string = atob(base64.replace(/^.*,/, ""));
-  const buffer = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) {
-    buffer[i] = bin.charCodeAt(i);
-  }
-
-  return new Blob([buffer.buffer], { type });
-};
-
 const authHeader = (channelAccessToken: string) => ({ headers: { Authorization: `Bearer ${channelAccessToken}` } });
 
 export type APIResponse = { label?: string, endpoint?: string, status: number, result: string, imageSrc?: string };
@@ -61,19 +50,17 @@ export const apiList = new APIList([
     ): Promise<APIResponse[]> => {
       const responses: APIResponse[] = [];
 
-      const createRichMenuResponse = await axios.post("/api/v2/bot/richmenu", menu, authHeader(channelAccessToken)).catch(({ response }: AxiosError<unknown>) => console.log(response));
+      const createRichMenuResponse = await axios.post("/api/v2/bot/richmenu", menu, authHeader(channelAccessToken)).catch(({ response }: AxiosError<unknown>) => response);
 
       responses.push({ label: "リッチメニュー作成API", endpoint: "https://api.line.me/v2/bot/richmenu", status: createRichMenuResponse.status, result: JSON.stringify(createRichMenuResponse.data) });
       if (createRichMenuResponse.data.richMenuId) {
         changeRichMenuId(createRichMenuResponse.data.richMenuId);
         const contentType = { JPEG: "image/jpeg", PNG: "image/png" }[menuImage.fileType];
-        console.log(contentType)
         const uploadRichMenuImageResponse = await axios.post(
           `/api/v2/bot/richmenu/${createRichMenuResponse.data.richMenuId}/content`,
-          toBlob(menuImage.image.src, contentType),
+          menuImage.image.src,
           { headers: { ...authHeader(channelAccessToken).headers, "Content-Type": contentType }}
         ).catch(({ response }: AxiosError<unknown>) => response);
-        console.log(uploadRichMenuImageResponse)
         responses.push({ label: "画像アップロードAPI", endpoint: `https://api-data.line.me/v2/bot/richmenu/${createRichMenuResponse.data.richMenuId}/content`, status: uploadRichMenuImageResponse.status, result: JSON.stringify(uploadRichMenuImageResponse.data) });
       }
       return responses;
