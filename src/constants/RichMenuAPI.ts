@@ -2,7 +2,7 @@ import axiosBase, { AxiosError } from "axios";
 import { EditingRichMenuContextType } from "types/RichMenu";
 import { v4 as uuidv4 } from "uuid";
 
-const axios = axiosBase.create({ baseURL: "https://cors.e-chan1007.workers.dev/", headers: { "Content-Type": "application/json" }, responseType: "json" });
+const axios = axiosBase.create({ responseType: "json" });
 
 const errorMessages = {
   "NEED_UPLOADING": "リッチメニューのアップロードを先にしてください",
@@ -13,10 +13,12 @@ const errorMessages = {
 
 const toBlob = (base64: string, type: string) => {
   const bin: string = atob(base64.split(",")[1]);
+  //const bin: string = atob(base64.replace(/^.*,/, ""));
   const buffer = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) {
     buffer[i] = bin.charCodeAt(i);
   }
+
   return new Blob([buffer.buffer], { type });
 };
 
@@ -58,16 +60,20 @@ export const apiList = new APIList([
       { menu, menuImage, setters: { changeRichMenuId } }: EditingRichMenuContextType
     ): Promise<APIResponse[]> => {
       const responses: APIResponse[] = [];
-      const createRichMenuResponse = await axios.post("api.line.me/v2/bot/richmenu", menu, authHeader(channelAccessToken)).catch(({ response }: AxiosError<unknown>) => response);
+
+      const createRichMenuResponse = await axios.post("/api/v2/bot/richmenu", menu, authHeader(channelAccessToken)).catch(({ response }: AxiosError<unknown>) => console.log(response));
+
       responses.push({ label: "リッチメニュー作成API", endpoint: "https://api.line.me/v2/bot/richmenu", status: createRichMenuResponse.status, result: JSON.stringify(createRichMenuResponse.data) });
       if (createRichMenuResponse.data.richMenuId) {
         changeRichMenuId(createRichMenuResponse.data.richMenuId);
         const contentType = { JPEG: "image/jpeg", PNG: "image/png" }[menuImage.fileType];
+        console.log(contentType)
         const uploadRichMenuImageResponse = await axios.post(
-          `api-data.line.me/v2/bot/richmenu/${createRichMenuResponse.data.richMenuId}/content`,
+          `/api/v2/bot/richmenu/${createRichMenuResponse.data.richMenuId}/content`,
           toBlob(menuImage.image.src, contentType),
-          { headers: { ...authHeader(channelAccessToken).headers, "Content-Type": contentType } }
+          { headers: { ...authHeader(channelAccessToken).headers, "Content-Type": contentType }}
         ).catch(({ response }: AxiosError<unknown>) => response);
+        console.log(uploadRichMenuImageResponse)
         responses.push({ label: "画像アップロードAPI", endpoint: `https://api-data.line.me/v2/bot/richmenu/${createRichMenuResponse.data.richMenuId}/content`, status: uploadRichMenuImageResponse.status, result: JSON.stringify(uploadRichMenuImageResponse.data) });
       }
       return responses;
@@ -81,33 +87,8 @@ export const apiList = new APIList([
     validateParams: ({ richMenuId }: { richMenuId: string }) => (richMenuId.startsWith("richmenu-") ? { isSucceeded: true, messages: [] } : { isSucceeded: false, messages: [errorMessages.NEED_UPLOADING] }),
     callAPI: async (channelAccessToken, { richMenuId }: { richMenuId: string }) => {
       const responses: APIResponse[] = [];
-      const setRichMenuAsDefaultResponse = await axios.post(`api.line.me/v2/bot/user/all/richmenu/${richMenuId}`, null, authHeader(channelAccessToken)).catch(({ response }: AxiosError<unknown>) => response);
+      const setRichMenuAsDefaultResponse = await axios.post(`/api/v2/bot/user/all/richmenu/${richMenuId}`, null, authHeader(channelAccessToken)).catch(({ response }: AxiosError<unknown>) => response);
       responses.push({ label: "リッチメニュー設定API", endpoint: `https://api.line.me/v2/bot/user/all/richmenu/${richMenuId}`, status: setRichMenuAsDefaultResponse.status, result: JSON.stringify(setRichMenuAsDefaultResponse.data) });
-      return responses;
-    }
-  },
-  {
-    key: "linkRichMenuToUsers",
-    label: "ユーザーとリンク",
-    description: "リッチメニューを特定のユーザーに表示",
-    endpoints: ["POST https://api.line.me/v2/bot/richmenu/bulk/link"],
-    validateParams: ({ richMenuId, userIds }: { richMenuId: string, userIds: string }) => {
-      const messages = [];
-      let isSucceeded = true;
-      if (!richMenuId.startsWith("richmenu-")) {
-        isSucceeded = false;
-        messages.push(errorMessages.NEED_UPLOADING);
-      }
-      if (!userIds || userIds.length === 0) {
-        isSucceeded = false;
-        messages.push(errorMessages.MISSING_USER_ID);
-      }
-      return { isSucceeded, messages };
-    },
-    callAPI: async (channelAccessToken, { richMenuId, userIds }: { richMenuId: string, userIds: string }) => {
-      const responses: APIResponse[] = [];
-      const linkRichMenuToUserResponse = await axios.post(`api.line.me/v2/bot/richmenu/bulk/link`, { richMenuId, userIds: userIds.split("\n") }, authHeader(channelAccessToken)).catch(({ response }: AxiosError<unknown>) => response);
-      responses.push({ label: "リッチメニューリンクAPI", endpoint: "https://api.line.me/v2/bot/richmenu/bulk/link", status: linkRichMenuToUserResponse.status, result: JSON.stringify(linkRichMenuToUserResponse.data) });
       return responses;
     }
   },

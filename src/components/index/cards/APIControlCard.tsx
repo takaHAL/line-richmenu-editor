@@ -32,17 +32,6 @@ export default function APIControlCard() {
 
         <APIController apiSpec={apiList.get("setRichMenuAsDefault")} {...menuContext} />
 
-        <APIController apiSpec={apiList.get("linkRichMenuToUsers")} {...menuContext}>
-          <TextField
-            label="ユーザーID (改行区切りで複数指定可能)"
-            multiline
-            rows={3}
-            value={controllerContext.dataStore.linkRichMenuToUsers?.params?.userIds as string || ""}
-            onChange={e => controllerContext.setStoreValue("linkRichMenuToUsers", { ...controllerContext.dataStore.linkRichMenuToUsers, params: { ...controllerContext.dataStore.linkRichMenuToUsers.params, userIds: e.target.value }})}
-            sx={{ width: "100%" }}
-          />
-        </APIController>
-
         <APIController apiSpec={apiList.get("addRichMenuAlias")} {...menuContext}>
           <TextField
             label="リッチメニューエイリアス"
