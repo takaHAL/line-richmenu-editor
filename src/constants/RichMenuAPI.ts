@@ -99,7 +99,7 @@ export const apiList = new APIList([
     },
     callAPI: async (channelAccessToken, { richMenuId, alias }: { richMenuId: string, alias: string }) => {
       const responses: APIResponse[] = [];
-      const addRichMenuAliasResponse = await axios.post(`api.line.me/v2/bot/richmenu/alias`, { richMenuId, richMenuAliasId: alias }, authHeader(channelAccessToken)).catch(({ response }: AxiosError<unknown>) => response);
+      const addRichMenuAliasResponse = await axios.post(`/api/v2/bot/richmenu/alias`, { richMenuId, richMenuAliasId: alias }, authHeader(channelAccessToken)).catch(({ response }: AxiosError<unknown>) => response);
       responses.push({ label: "リッチメニューエイリアス作成API", endpoint: "https://api.line.me/v2/bot/richmenu/alias", status: addRichMenuAliasResponse.status, result: JSON.stringify(addRichMenuAliasResponse.data) });
       return responses;
     }
@@ -120,7 +120,7 @@ export const apiList = new APIList([
     },
     callAPI: async (channelAccessToken, { alias }: { alias: string }) => {
       const responses: APIResponse[] = [];
-      const deleteRichMenuAliasResponse = await axios.delete(`api.line.me/v2/bot/richmenu/alias/${alias}`, authHeader(channelAccessToken)).catch(({ response }: AxiosError<unknown>) => response);
+      const deleteRichMenuAliasResponse = await axios.delete(`/api/v2/bot/richmenu/alias/${alias}`, authHeader(channelAccessToken)).catch(({ response }: AxiosError<unknown>) => response);
       responses.push({ label: "リッチメニューエイリアス削除API", endpoint: `https://api.line.me/v2/bot/richmenu/alias/${alias}`, status: deleteRichMenuAliasResponse.status, result: JSON.stringify(deleteRichMenuAliasResponse.data) });
       return responses;
     }
@@ -137,7 +137,7 @@ export const apiList = new APIList([
     ): Promise<APIResponse[]> => {
       const responses: APIResponse[] = [];
       if (richMenuId.startsWith("richmenu-")) {
-        const deleteRichMenuResponse = await axios.delete(`api.line.me/v2/bot/richmenu/${richMenuId}`, authHeader(channelAccessToken)).catch(({ response }: AxiosError<unknown>) => response);
+        const deleteRichMenuResponse = await axios.delete(`/api/v2/bot/richmenu/${richMenuId}`, authHeader(channelAccessToken)).catch(({ response }: AxiosError<unknown>) => response);
         responses.push({ label: "リッチメニュー削除API", endpoint: "https://api.line.me/v2/bot/richmenu", status: deleteRichMenuResponse.status, result: JSON.stringify(deleteRichMenuResponse.data) });
       }
       changeRichMenuId((deleteFromLocal || !richMenuId.startsWith("richmenu-")) ? "DELETED" : uuidv4());
