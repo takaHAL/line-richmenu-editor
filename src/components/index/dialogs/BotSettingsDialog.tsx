@@ -13,7 +13,7 @@ import axiosBase from "axios";
 import { BotAccountContext } from "contexts/BotAccountContext";
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 
-const axios = axiosBase.create({ baseURL: "https://cors.e-chan1007.workers.dev/", headers: { "Content-Type": "application/json" }, responseType: "json" });
+const axios = axiosBase.create({ headers: { "Content-Type": "application/json" }, responseType: "json" });
 
 export default function BotSettingsDialog(
   { isDialogOpened, setIsDialogOpened }:
@@ -53,7 +53,8 @@ export default function BotSettingsDialog(
           ref={saveButtonRef}
           onClick={async () => {
             setChannelAccessTokenValidating(true);
-            const result = await axios.get("api.line.me/v2/bot/info", { headers: { Authorization: `Bearer ${channelAccessToken.trim()}` }}).catch(({ response }) => response);
+            const result = await axios.get("/api/v2/bot/info", { headers: { Authorization: `Bearer ${channelAccessToken.trim()}` }}).catch(({ response }) => response);
+
             setChannelAccessTokenValidating(false);
             setChannelAccessTokenValidated(true);
             if (result.status === 200) {
